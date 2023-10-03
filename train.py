@@ -157,6 +157,7 @@ def train_fcn_net(args):
         os.mkdir(log_path)
 
     transition_dirs = next(os.walk(args.dataset_dir))[1]
+    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
     # Split data to training/validation
     random.seed(0)
@@ -176,7 +177,7 @@ def train_fcn_net(args):
     data_loaders = {'train': data_loader_train, 'val': data_loader_val}
     print('{} training data, {} validation data'.format(len(train_ids), len(val_ids)))
 
-    model = ResFCN().to('cuda')
+    model = ResFCN().to(device)
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     # criterion = nn.SmoothL1Loss(reduction='none')
     criterion = nn.BCELoss(reduction='none')
@@ -184,9 +185,9 @@ def train_fcn_net(args):
     for epoch in range(args.epochs):
         model.train()
         for batch in data_loader_train:
-            x = batch[0].to('cuda')
+            x = batch[0].to(device)
             rotations = batch[1]
-            y = batch[2].to('cuda', dtype=torch.float)
+            y = batch[2].to(device, dtype=torch.float)
 
             pred = model(x, specific_rotation=rotations)
 
@@ -202,9 +203,9 @@ def train_fcn_net(args):
         epoch_loss = {'train': 0.0, 'val': 0.0}
         for phase in ['train', 'val']:
             for batch in data_loaders[phase]:
-                x = batch[0].to('cuda')
+                x = batch[0].to(device)
                 rotations = batch[1]
-                y = batch[2].to('cuda', dtype=torch.float)
+                y = batch[2].to(device, dtype=torch.float)
 
                 pred = model(x, specific_rotation=rotations)
 
@@ -238,6 +239,8 @@ def train_regressor(args):
     transition_dirs = next(os.walk(args.dataset_dir))[1]
     transition_dirs = transition_dirs[:int(0.95 * len(transition_dirs))]
 
+    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+
     # Split data to training/validation
     random.seed(0)
     random.shuffle(transition_dirs)
@@ -253,7 +256,7 @@ def train_regressor(args):
     print('{} training data, {} validation data'.format(len(train_ids), len(val_ids)))
 
     # model = Classifier(n_classes=3).to('cuda')
-    model = Regressor().to('cuda')
+    model = Regressor().to(device)
 
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     # criterion = nn.CrossEntropyLoss()
@@ -262,9 +265,9 @@ def train_regressor(args):
     for epoch in range(args.epochs):
         model.train()
         for batch in data_loader_train:
-            x = batch[0].to('cuda', dtype=torch.float32)
+            x = batch[0].to(device, dtype=torch.float32)
             # y = batch[1].to('cuda', dtype=torch.long)
-            y = batch[1].to('cuda', dtype=torch.float32)
+            y = batch[1].to(device, dtype=torch.float32)
 
             pred = model(x)
 
@@ -279,9 +282,9 @@ def train_regressor(args):
         # accuraccy = {'train': 0.0, 'val': 0.0}
         for phase in ['train', 'val']:
             for batch in data_loaders[phase]:
-                x = batch[0].to('cuda', dtype=torch.float32)
+                x = batch[0].to(device, dtype=torch.float32)
                 # y = batch[1].to('cuda', dtype=torch.long)
-                y = batch[1].to('cuda', dtype=torch.float32)
+                y = batch[1].to(device, dtype=torch.float32)
 
                 pred = model(x)
 

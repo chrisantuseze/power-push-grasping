@@ -56,7 +56,7 @@ class ResFCN(nn.Module):
     def __init__(self):
         super(ResFCN, self).__init__()
         self.nr_rotations = 16
-        self.device = 'cuda'
+        self.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
         self.conv1 = nn.Conv2d(1, 64, kernel_size=3, stride=1, padding=1, bias=False)
         self.rb1 = self.make_layer(64, 128)
@@ -101,7 +101,7 @@ class ResFCN(nn.Module):
             batch_rot_depth = torch.zeros((self.nr_rotations,
                                            1,
                                            depth_heightmap.shape[3],
-                                           depth_heightmap.shape[3])).to('cuda')
+                                           depth_heightmap.shape[3])).to(self.device)
 
             for rot_id in range(self.nr_rotations):
 

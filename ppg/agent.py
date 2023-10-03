@@ -72,6 +72,8 @@ class PushGrasping(Policy):
     def __init__(self, params):
         super(PushGrasping, self).__init__(params)
 
+        self.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+
         self.rotations = params['agent']['fcn']['rotations']
         self.aperture_limits = params['agent']['regressor']['aperture_limits']
         self.pxl_size = params['env']['pixel_size']
@@ -81,11 +83,11 @@ class PushGrasping(Policy):
         self.push_distance = 0.15
         self.z = 0.1
 
-        self.fcn = ResFCN().to('cuda')
+        self.fcn = ResFCN().to(self.device) #ResFCN().to('cuda')
         self.fcn_optimizer = optim.Adam(self.fcn.parameters(), lr=params['agent']['fcn']['learning_rate'])
         self.fcn_criterion = nn.BCELoss(reduction='none')
 
-        self.reg = Regressor().to('cuda')
+        self.reg = Regressor().to(self.device) #Regressor().to('cuda')
         self.reg_optimizer = optim.Adam(self.reg.parameters(), lr=params['agent']['regressor']['learning_rate'])
         self.reg_criterion = nn.L1Loss()
 
@@ -379,7 +381,7 @@ class PushGrasping(Policy):
     def predict(self, state):
 
         # Find optimal position and orientation
-        x = torch.FloatTensor(self.pre_process(state)). unsqueeze(0).to('cuda')
+        x = torch.FloatTensor(self.pre_process(state)). unsqueeze(0).to(self.device)
         out_prob = self.fcn(x, is_volatile=True)
         out_prob = self.post_process(out_prob)
 
@@ -402,7 +404,7 @@ class PushGrasping(Policy):
         # Find optimal aperture
         aperture_img = self.pre_process_aperture_img(state, p1, theta)
 
-        x = torch.FloatTensor(aperture_img).unsqueeze(0).to('cuda')
+        x = torch.FloatTensor(aperture_img).unsqueeze(0).to(self.device)
         aperture = self.reg(x).detach().cpu().numpy()[0, 0]
         # print('aperture', aperture.detach().cpu().numpy()[0, 0])
 
@@ -447,8 +449,8 @@ class PushGrasping(Policy):
 
         # Update FCN
         heightmap, rot_id, label = self.get_fcn_labels(state, action)
-        x = torch.FloatTensor(heightmap).unsqueeze(0).to('cuda')
-        label = torch.FloatTensor(label).unsqueeze(0).to('cuda')
+        x = torch.FloatTensor(heightmap).unsqueeze(0).to(self.device)
+        label = torch.FloatTensor(label).unsqueeze(0).to(self.device)
         rotations = np.array([rot_id])
         q_maps = self.fcn(x, specific_rotation=rotations)
 
@@ -465,12 +467,12 @@ class PushGrasping(Policy):
         # Update regression network
         x = torch.FloatTensor(self.pre_process_aperture_img(state,
                                                             p1=np.array([action[0], action[1]]),
-                                                            theta=action[2])).unsqueeze(0).to('cuda')
+                                                            theta=action[2])).unsqueeze(0).to(self.device)
         # Normalize aperture to range 0-1
         normalized_aperture = utils.min_max_scale(action[3],
                                                   range=[self.aperture_limits[0], self.aperture_limits[1]],
                                                   target_range=[0, 1])
-        gt_aperture = torch.FloatTensor(np.array([normalized_aperture])).unsqueeze(0).to('cuda')
+        gt_aperture = torch.FloatTensor(np.array([normalized_aperture])).unsqueeze(0).to(self.device)
         pred_aperture = self.reg(x)
 
         print('APERTURES')
@@ -510,10 +512,10 @@ class PushGrasping(Policy):
         pickle.dump(self.info, open(os.path.join(folder_name, 'info'), 'wb'))
 
     def load(self, fcn_model, reg_model):
-        self.fcn.load_state_dict(torch.load(fcn_model))
+        self.fcn.load_state_dict(torch.load(fcn_model, map_location=self.device))
         self.fcn.eval()
 
-        self.reg.load_state_dict(torch.load(reg_model))
+        self.reg.load_state_dict(torch.load(reg_model, map_location=self.device))
         self.reg.eval()
 
     def terminal(self, obs, next_obs):
