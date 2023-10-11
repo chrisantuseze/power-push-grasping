@@ -24,8 +24,12 @@ class HeightmapDataset(data.Dataset):
 
     def __getitem__(self, idx):
         # print(os.path.join(self.dataset_dir, self.dir_ids[idx]))
-        heightmap = cv2.imread(os.path.join(self.dataset_dir, self.dir_ids[idx], 'heightmap.exr'), -1)
-        action = pickle.load(open(os.path.join(self.dataset_dir, self.dir_ids[idx], 'action'), 'rb'))
+        try:
+            heightmap = cv2.imread(os.path.join(self.dataset_dir, self.dir_ids[idx], 'heightmap.exr'), -1)
+            action = pickle.load(open(os.path.join(self.dataset_dir, self.dir_ids[idx], 'action'), 'rb'))
+        except:
+            heightmap = cv2.imread(os.path.join(self.dataset_dir, self.dir_ids[idx+1], 'heightmap.exr'), -1)
+            action = pickle.load(open(os.path.join(self.dataset_dir, self.dir_ids[idx+1], 'action'), 'rb'))
 
         diagonal_length = float(heightmap.shape[0]) * np.sqrt(2)
         diagonal_length = np.ceil(diagonal_length / 16) * 16
