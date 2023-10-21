@@ -399,6 +399,7 @@ class FloatingBHand(FloatingGripper):
 
 class SimCamera:
     def __init__(self, config):
+        self.config = config
         self.pos = np.array(config['pos'])
         self.target_pos = np.array(config['target_pos'])
         self.up_vector = np.array(config['up_vector'])
@@ -452,6 +453,41 @@ class SimCamera:
                                  self.view_matrix, self.projection_matrix,
                                  flags=p.ER_SEGMENTATION_MASK_OBJECT_AND_LINKINDEX)
         return image[2], self.get_depth(image[3]), image[4]
+    
+    def get_data_new(self):
+        """
+        Returns
+        -------
+        np.array(), np.array(), np.array()
+            The rgb, depth and segmentation images
+        """
+        _, _, color, depth, segm = p.getCameraImage(self.width, self.height,
+                                    self.view_matrix, self.projection_matrix,
+                                    flags=p.ER_SEGMENTATION_MASK_OBJECT_AND_LINKINDEX,
+                                    renderer=p.ER_BULLET_HARDWARE_OPENGL,
+                                )
+        
+        # Get color image.
+        color_image_size = (self.config["image_size"][0], self.config["image_size"][1], 4)
+        color = np.array(color, dtype=np.uint8).reshape(color_image_size)
+        color = color[:, :, :3]  # remove alpha channel
+        if self.config["noise"]:
+            color = np.int32(color)
+            color += np.int32(self._random.normal(0, 3, self.config["image_size"]))
+            color = np.uint8(np.clip(color, 0, 255))
+
+        # Get depth image.
+        depth_image_size = (self.config["image_size"][0], self.config["image_size"][1])
+        zbuffer = np.array(depth).reshape(depth_image_size)
+        depth = self.z_far + self.z_near - (2.0 * zbuffer - 1.0) * (self.z_far - self.z_near)
+        depth = (2.0 * self.z_near * self.z_far) / depth
+        if self.config["noise"]:
+            depth += self._random.normal(0, 0.003, depth_image_size)
+
+        # Get segmentation image.
+        segm = np.uint8(segm).reshape(depth_image_size)
+
+        return color, depth, segm
 
 
 class Environment:
@@ -768,14 +804,14 @@ class Environment:
         # Filter stable grasps. Keep the ones that created space around the grasped object.
         # If there is an object above the table (grasped and remained in the hand) and the push-grasping
         # increased the distance of the grasped objects from others, then count it as a successful
-        if self.singulation_condition and stable_grasp:
-            for obj in self.objects:
-                pos, _ = p.getBasePositionAndOrientation(bodyUniqueId=obj.body_id)
-                if pos[2] > 0.25 and diffs[obj.body_id] > 0.015:
-                    grasp_label = True
-                    break
-                else:
-                    grasp_label = False
+        # if self.singulation_condition and stable_grasp:
+        #     for obj in self.objects:
+        #         pos, _ = p.getBasePositionAndOrientation(bodyUniqueId=obj.body_id)
+        #         if pos[2] > 0.25 and diffs[obj.body_id] > 0.015:
+        #             grasp_label = True
+        #             break
+        #         else:
+        #             grasp_label = False
 
         # Move home
         self.bhand.move(self.bhand.home_position, action['quat'], duration=.1)
@@ -796,7 +832,7 @@ class Environment:
         obs = {'color': [], 'depth': [], 'seg': [], 'full_state': []}
 
         for cam in self.agent_cams:
-            color, depth, seg = cam.get_data()
+            color, depth, seg = cam.get_data_new()
             obs['color'] += (color,)
             obs['depth'] += (depth,)
             obs['seg'] += (seg,)

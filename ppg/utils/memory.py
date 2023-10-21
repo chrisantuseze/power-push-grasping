@@ -23,11 +23,12 @@ class ReplayBuffer:
 
     def store(self, transition):
         folder_name = os.path.join(self.log_dir, 'transition_' + str(self.count).zfill(5))
-        if os.path.exists(folder_name):
-            raise Exception
-        os.mkdir(folder_name)
+        if not os.path.exists(folder_name):
+            # raise Exception
+            os.mkdir(folder_name)
 
         cv2.imwrite(os.path.join(folder_name, 'heightmap.exr'), transition['state'])
+        cv2.imwrite(os.path.join(folder_name, 'target_mask.png'), transition['target_mask'])
         pickle.dump(transition['action'], open(os.path.join(folder_name, 'action'), 'wb'))
 
         # Save everything that obs contains

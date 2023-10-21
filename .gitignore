@@ -15,13 +15,20 @@ venv/
 
 *.pt
 
+*.log
+*.txt
+
 scripts/
 models/
 #assets/
 logs/
-logs_tmp/
+save/
 baselines/
 lib/
 bin/
 share/
+downloads/
 pyvenv.cfg
+.DS_Store
+runs/
+logs_tmp/

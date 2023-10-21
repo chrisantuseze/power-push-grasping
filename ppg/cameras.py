@@ -1,5 +1,6 @@
 import numpy as np
 import pybullet as p
+from utils.constants import *
 
 
 """Camera configs."""
@@ -8,7 +9,8 @@ import pybullet as p
 class RealSense():
   """Default configuration with 2 RealSense RGB-D cameras."""
 
-  image_size = (480, 640)
+#   image_size = (480, 640)
+  image_size = (IMAGE_WIDTH, IMAGE_HEIGHT)
   intrinsics = (450., 0, 320., 0, 450., 240., 0, 0, 1)
 
   # Set default camera poses. (w.r.t. workspace center)
@@ -29,6 +31,7 @@ class RealSense():
       'target_pos': front_target_pos,
       'up_vector': front_up_vector,
       'zrange': (0.01, 10.),
+      'noise': False,
   }, {
       'image_size': image_size,
       'intrinsics': intrinsics,
@@ -36,4 +39,5 @@ class RealSense():
       'target_pos': top_target_pos,
       'up_vector': top_up_vector,
       'zrange': (0.01, 10.),
+      'noise': False,
   }]
