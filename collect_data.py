@@ -52,8 +52,13 @@ def collect_random_dataset(args):
         for i in range(15):
             state = policy.state_representation(obs)
 
-            # Select action
-            action = policy.guided_exploration(state)
+            try:
+                # Select action
+                action = policy.guided_exploration(state)
+            except:
+                obs = env.reset()
+                continue
+            
             env_action = policy.action(action)
 
             # Step environment.
