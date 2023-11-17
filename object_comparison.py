@@ -53,7 +53,7 @@ def get_grasped_object(processed_masks, action):
     for id, mask in enumerate(processed_masks):
         dist = get_distance(get_object_centroid(mask), (action[0], action[1]))
         print(dist)
-        if dist < 300:
+        if dist < 250:
             return id, mask
 
     return -1, None
