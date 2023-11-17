@@ -65,12 +65,7 @@ def collect_random_dataset(args):
             next_obs, grasp_info = env.step(env_action)
 
             if grasp_info['stable']:
-
-                # new_processed_masks, pred_mask, raw_masks = segmenter.from_maskrcnn(obs['color'][id], obs['depth'][id], dir=TRAIN_EPISODES_DIR, plot=True)
-                # target_id, target_mask = get_grasped_object(processed_masks, new_processed_masks)
-
                 target_id, target_mask = get_grasped_object(processed_masks, action)
-
 
                 if target_id != -1:
                     cv2.imwrite(os.path.join("save/misc/train", "target_mask.png"), target_mask)

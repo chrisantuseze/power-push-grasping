@@ -19,12 +19,12 @@ PLANE_URDF_PATH = "plane/plane.urdf"
 
 class Simulation:
     def __init__(self, objects):
-        self.names_button = NamesButton('Show names')
+        self.names_button = None#NamesButton('Show names')
         self.objects = objects
 
     def step(self):
         p.stepSimulation()
-        self.names_button.show_names(self.objects)
+        # self.names_button.show_names(self.objects)
 
 
 class Button:
@@ -533,7 +533,8 @@ class Environment:
 
         # Start PyBullet.
         if disp:
-            p.connect(p.GUI)
+            # p.connect(p.GUI)
+            p.connect(p.DIRECT)
 
             # Move default camera closer to the scene.
             target = np.array(self.workspace_pos)
