@@ -85,3 +85,10 @@ To evaluate on challenging scenes.
 ```commandline
 python test.py --fcn_model path-to-fcn-model --reg_model path-to-reg-model --object_set 'challenging'
 ```
+
+
+ppg-1: 3
+ppg-2: 4
+ppg-3: 5
+ppg-4: 6
+ppg-5: 7
